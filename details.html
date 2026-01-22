@@ -435,6 +435,55 @@
             color: #000;
             box-shadow: 0 0 15px var(--color-primary);
         }
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .big-text {
+                font-size: 6rem;
+                -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+            }
+
+            .lock-interface {
+                transform: scale(0.85); /* Scale down for smaller screens while keeping JS logic intact */
+                width: 100%;
+            }
+
+            .gate-left .door-content {
+                right: 2%;
+            }
+
+            .gate-right .door-content {
+                left: 2%;
+            }
+
+            #detail-content {
+                padding: 4rem 1.5rem;
+            }
+
+            .detail-section {
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .detail-section h2 {
+                font-size: 1.8rem;
+            }
+
+            .detail-section p {
+                font-size: 1rem;
+            }
+
+            .back-nav {
+                top: 1rem;
+                left: 1rem;
+                width: calc(100% - 2rem);
+            }
+
+            .back-btn {
+                width: 100%;
+                justify-content: center;
+                background: rgba(0, 0, 0, 0.8);
+            }
+        }
     </style>
 </head>
 
