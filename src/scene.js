@@ -295,8 +295,9 @@ export function initScene(containerId, initialTheme) {
     const desktopLookAt = new THREE.Vector3(-6, 0, 0);
 
     // Mobile: Look at the Core but higher up, from further back
-    const mobileCameraPos = new THREE.Vector3(0, 3, 18); // Camera higher up
-    const mobileLookAt = new THREE.Vector3(0, 2, 0); // Look at higher point
+    // Mobile: Look at a point significantly lower (y=-5) so the Core (y=0) appears near the top
+    const mobileCameraPos = new THREE.Vector3(0, 0, 20);
+    const mobileLookAt = new THREE.Vector3(0, -5, 0);
 
     let currentLookAt = new THREE.Vector3();
     let targetCameraPos = new THREE.Vector3();
