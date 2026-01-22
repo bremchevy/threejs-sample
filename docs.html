@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentation | Neural Core</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        // CRITICAL: Apply Theme Immediately to prevent Flash of Default Color
+        try {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                const { color, bg } = JSON.parse(savedTheme);
+                document.documentElement.style.setProperty('--color-primary', color);
+                document.documentElement.style.setProperty('--color-bg', bg);
+                document.documentElement.style.setProperty('--glass-border', color + '33');
+            }
+        } catch (e) {
+            console.error('Theme load error:', e);
+        }
+    </script>
+    <style>
+        :root {
+            --color-primary: #00ffff;
+            --color-secondary: #0044ff;
+            --color-bg: #050505;
+            --font-display: 'Orbitron', sans-serif;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            margin: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: auto;
+        }
+
+        #app {
+            position: relative;
+            z-index: 2;
+        }
+
+        body.loaded {
+            overflow: auto;
+        }
+
+        /* Ensure canvas is above content on mobile */
+        @media (max-width: 768px) {
+            canvas {
+                z-index: 5 !important;
+                position: fixed !important;
+            }
+        }
+
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease-out;
+            pointer-events: none;
+        }
+
+        .spinner {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top-color: var(--color-primary);
+            animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+
+        .spinner-ring:nth-child(2) {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            border-top-color: var(--color-secondary);
+            animation-duration: 2s;
+            animation-direction: reverse;
+        }
+
+        .spinner-ring:nth-child(3) {
+            width: 40%;
+            height: 40%;
+            top: 30%;
+            left: 30%;
+            border-top-color: #fff;
+            border-width: 2px;
+            animation-duration: 1s;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loader-text {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--color-primary);
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            animation: pulse 1s infinite alternate;
+            white-space: nowrap;
+        }
+
+        @keyframes pulse {
+            from {
+                opacity: 0.5;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .loaded #loader-overlay {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Docs-Specific Overrides - DESKTOP */
+        main {
+            position: relative;
+            margin-left: 40%;
+            width: 60%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 8rem 2rem 2rem 2rem;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                width: 100%;
+                margin-left: 0;
+                /* Start content lower to leave space for 3D at top */
+                padding: 50vh 1.5rem 6rem 1.5rem;
+                align-items: center;
+                background: transparent;
+                display: flex;
+                flex-direction: column;
+                /* Lower z-index so canvas renders ABOVE */
+                z-index: 1 !important;
+            }
+
+            h1 {
+                text-align: center;
+                font-size: clamp(2.5rem, 10vw, 3.5rem);
+                text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+                margin-bottom: 2rem;
+                z-index: 10;
+                width: 100%;
+                /* Reset margin since we use padding on main now */
+                margin-top: 0;
+            }
+
+            p.hero-text {
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                text-align: center;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+                width: 100%;
+                z-index: 10;
+                /* Remove the weird gap, just natural flow now */
+                margin-top: 0;
+            }
+
+            .status-marker {
+                margin-top: 1rem;
+                justify-content: center;
+                width: 100%;
+            }
+
+            .stats-row {
+                width: 100%;
+                justify-content: space-around;
+                gap: 1rem !important;
+                margin-bottom: 3rem !important;
+            }
+
+            .stat {
+                text-align: center;
+            }
+
+            .doc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Re-enable pointer events for interactive children */
+        main>* {
+            pointer-events: auto;
+        }
+
+        /* Scrollbar styling for main content if needed */
+        main::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        main::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        main::-webkit-scrollbar-thumb {
+            background: var(--color-primary);
+            border-radius: 4px;
+        }
+
+        h1 {
+            font-size: clamp(1rem, 2vw, 2rem);
+            /* Responsive font size */
+            word-break: normal;
+            overflow-wrap: normal;
+            /* Only break if absolutely necessary */
+            hyphens: none;
+            /* Reduced from 4rem */
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 0%, var(--color-primary) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-fill-color: transparent;
+            text-align: left;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8));
+            margin-top: 0;
+            /* Removed top margin */
+        }
+
+        p.hero-text {
+            font-size: 1.15rem;
+            width: 100%;
+            color: #ffffff;
+            margin: 0 0 3rem 0;
+            text-align: left;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(4px);
+            border-left: 3px solid var(--color-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: rgba(2, 6, 12, 0.85);
+            /* Dark semi-transparent background */
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--color-primary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            font-family: var(--font-display);
+        }
+
+        .card p {
+            color: #9ca3af;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                width: 100%;
+                margin-left: 0;
+                padding: 40vh 1.5rem 6rem 1.5rem;
+                /* Top padding for 3D visibility, bottom for nav/scroll */
+                background: linear-gradient(to bottom, transparent 0%, rgba(5, 5, 5, 0.5) 35%, #050505 50%);
+            }
+
+            h1 {
+                font-size: 2.5rem;
+                margin-top: 0;
+                text-align: center;
+            }
+
+            p.hero-text {
+                font-size: 1rem;
+                padding: 1rem;
+                margin-bottom: 2rem;
+                text-align: center;
+                border-left: none;
+                border-top: 3px solid var(--color-primary);
+            }
+
+            .doc-grid {
+                grid-template-columns: 1fr;
+                /* Single column */
+                gap: 1.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+
+        /* New UI Elements */
+        h2.section-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: #fff;
+            margin: 4rem 0 2rem 0;
+            padding-left: 1rem;
+            border-left: 4px solid var(--color-primary);
+            text-shadow: 0 0 10px var(--color-primary);
+        }
+
+        .read-more {
+            display: inline-block;
+            margin-top: 1rem;
+            color: var(--color-primary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .read-more:hover {
+            color: #fff;
+            text-shadow: 0 0 8px #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div id="loader-overlay">
+        <div class="spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="loader-text">SYSTEM DOCS</div>
+        </div>
+    </div>
+    <div id="canvas-container"></div>
+
+    <div id="app">
+        <nav class="glass-panel">
+            <div class="nav-background"></div>
+            <div class="logo">NEURAL<span class="highlight">CORE</span></div>
+            <div class="nav-links">
+                <button class="mobile-menu-btn" aria-label="Toggle Navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="nav-items">
+                    <a href="/">Interface</a>
+                    <a href="/docs.html" class="active">Docs</a>
+                    <a href="/#modules">Modules</a>
+                    <a href="/#pricing">Pricing</a>
+                </div>
+                <!-- Connect Dropdown -->
+                <div class="connect-dropdown-wrapper" style="position: relative;">
+                    <button class="cta-small btn-connect-trigger" style="display: flex; align-items: center; gap: 8px;">
+                        Connect
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor">
+                            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+
+                    <div class="wallet-dropdown glass-panel">
+                        <div class="wallet-option">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg"
+                                alt="MetaMask" class="wallet-icon-img">
+                            <span>METAMASK</span>
+                        </div>
+                        <div class="wallet-option">
+                            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cGF0aCBmaWxsPSIjQUI5RkYyIiBkPSJNMTA3LjQgMzMuNmMtNS43LTkuNC0xNC41LTE2LjUtMjQuOS0xOS45LTMuNy0xLjItNy44LTEuOS0xMi0xLjlINTcuNWMtMjAuMyAwLTM4LjMgMTIuMy00NS41IDMwLjdDOS4zIDUwLjggNy45IDU5LjQgNy45IDY4LjJjMCAyMy45IDEzLjkgNDQuNyAzNC40IDU0LjQgMy43IDEuNyA3LjcgMi42IDExLjkgMi42aDExLjJjMjguMyAwIDUxLjItMjIuOSAxLjItNTEuMiAwLTE0LjgtNi4zLTI4LjEtMTYuNS0zNy42LTEtMS0xLjktMS45LTIuNy0yLjh6Ii8+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTTM4LjMgOTAuNGMtNC4xIDAtNy40LTMuMy03LjQtNy40IDAtNC4xIDMuMy03LjQgNy40LTcuNCA0LjEgMCA3LjQgMy4zIDcuNCA3LjQgMCA0LjEtMy4zIDcuNC03LjQgNy40em0zMiAwYy00LjEgMC03LjQtMy4zLTcuNC03LjQgMC00LjEgMy4zLTcuNCA3LjQtNy40IDQuMSAwIDcuNCAzLjMgNy40IDcuNCAwIDQuMS0zLjQgNy40LTcuNCA3LjR6Ii8+PC9zdmc+"
+                                alt="Phantom" class="wallet-icon-img">
+                            <span>PHANTOM</span>
+                        </div>
+                        <div class="wallet-option">
+                            <img src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg"
+                                alt="WalletConnect" class="wallet-icon-img">
+                            <span>WALLETCONNECT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            <!-- Enhanced Hero Content -->
+            <div class="status-marker"
+                style="margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-primary); letter-spacing: 2px;">
+                <span class="blink"
+                    style="width: 8px; height: 8px; background: var(--color-primary); border-radius: 50%; display: inline-block;"></span>
+                SYSTEM ONLINE
+            </div>
+
+            <h1>SYSTEM<br>DOCUMENTATION</h1>
+
+            <p class="hero-text">Explore the architecture of the neural core. Detailed analysis of particle systems,
+                shaders, and post-processing pipelines.</p>
+
+            <div class="stats-row" style="margin-top: 2rem; display: flex; gap: 3rem; margin-bottom: 4rem;">
+                <div class="stat">
+                    <span class="value"
+                        style="display: block; font-size: 1.5rem; font-family: var(--font-display); color: #fff;">98%</span>
+                    <span class="label" style="font-size: 0.7rem; color: #64748b; letter-spacing: 1px;">CORE
+                        STABILITY</span>
+                </div>
+                <div class="stat">
+                    <span class="value"
+                        style="display: block; font-size: 1.5rem; font-family: var(--font-display); color: #fff;">3.2TB</span>
+                    <span class="label" style="font-size: 0.7rem; color: #64748b; letter-spacing: 1px;">DATA FLOW</span>
+                </div>
+                <div class="stat">
+                    <span class="value"
+                        style="display: block; font-size: 1.5rem; font-family: var(--font-display); color: #fff;">0ms</span>
+                    <span class="label" style="font-size: 0.7rem; color: #64748b; letter-spacing: 1px;">LATENCY</span>
+                </div>
+            </div>
+
+            <div class="doc-grid">
+                <!-- Core Architecture Section -->
+                <div class="card">
+                    <h3>Particle Dynamics</h3>
+                    <p>Understanding the physics behind the floating particle distribution and interaction models.</p>
+                    <a href="/details.html" class="read-more">View Specs &rarr;</a>
+                </div>
+                <div class="card">
+                    <h3>Bloom Shader</h3>
+                    <p>Deep dive into the customized UnrealBloomPass pipeline and exposure settings.</p>
+                    <a href="/details.html" class="read-more">View Shader &rarr;</a>
+                </div>
+                <div class="card">
+                    <h3>Render Loop</h3>
+                    <p>Optimization techniques for maintaining 60fps with post-processing enabled.</p>
+                    <a href="/details.html" class="read-more">Analyze &rarr;</a>
+                </div>
+                <div class="card">
+                    <h3>Event System</h3>
+                    <p>How raycasting interacts with the DOM and WebGL scene seamlessly.</p>
+                    <a href="/details.html" class="read-more">Debug &rarr;</a>
+                </div>
+            </div>
+
+            <h2 class="section-title">Advanced Simulation</h2>
+            <div class="doc-grid">
+                <div class="card">
+                    <h3>Quantum State</h3>
+                    <p>Probabilistic determination of core stability relative to user input velocity.</p>
+                    <a href="/details.html" class="read-more">Calculate &rarr;</a>
+                </div>
+                <div class="card">
+                    <h3>Entropy Decay</h3>
+                    <p>Visualizing data rot and signal loss through vertex displacement algorithms.</p>
+                    <a href="/details.html" class="read-more">restore &rarr;</a>
+                </div>
+                <div class="card">
+                    <h3>Threading Model</h3>
+                    <p>Off-main-thread geometry generation for non-blocking UI interactions.</p>
+                    <a href="/details.html" class="read-more">Inspect &rarr;</a>
+                </div>
+                <div class="card">
+                    <h3>Memory Heap</h3>
+                    <p>Garbage collection strategies for long-running WebGL instances.</p>
+                    <a href="/details.html" class="read-more">Allocate &rarr;</a>
+                </div>
+            </div>
+
+            <div style="height: 100px;"></div> <!-- Spacer -->
+        </main>
+
+        <!-- Theme Switcher -->
+        <div class="theme-switcher">
+            <div class="theme-toggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10h-10V2z"></path>
+                </svg>
+            </div>
+            <div class="theme-options">
+                <button class="theme-btn" data-color="#00ffff" data-bg="#050505" style="--btn-color: #00ffff"
+                    title="Cyber Cyan"></button>
+                <button class="theme-btn" data-color="#ff0055" data-bg="#150005" style="--btn-color: #ff0055"
+                    title="Neon Red"></button>
+                <button class="theme-btn" data-color="#bc13fe" data-bg="#0a0015" style="--btn-color: #bc13fe"
+                    title="Electric Purple"></button>
+                <button class="theme-btn" data-color="#00ff00" data-bg="#000f00" style="--btn-color: #00ff00"
+                    title="Matrix Green"></button>
+                <button class="theme-btn" data-color="#ffaa00" data-bg="#150800" style="--btn-color: #ffaa00"
+                    title="Safety Orange"></button>
+
+                <button class="theme-btn" data-color="#2962ff" data-bg="#000515" style="--btn-color: #2962ff"
+                    title="Deep Blue"></button>
+                <button class="theme-btn" data-color="#ccff00" data-bg="#0a1500" style="--btn-color: #ccff00"
+                    title="Toxic Lime"></button>
+                <button class="theme-btn" data-color="#ff00cc" data-bg="#150010" style="--btn-color: #ff00cc"
+                    title="Hot Pink"></button>
+                <button class="theme-btn" data-color="#ffee00" data-bg="#151000" style="--btn-color: #ffee00"
+                    title="Cyber Yellow"></button>
+                <button class="theme-btn" data-color="#ffffff" data-bg="#111111" style="--btn-color: #ffffff"
+                    title="Ghost White"></button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/docs-main.js"></script>
+    <!-- Failsafe Loader Removal -->
+    <script>
+        setTimeout(() => {
+            if (!document.body.classList.contains('loaded')) {
+                console.warn('Failsafe triggered: forcing loader removal');
+                document.body.classList.add('loaded');
+            }
+        }, 4000);
+    </script>
+</body>
+
+</html>

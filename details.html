@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Classified Details | Neural Core</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        // CRITICAL: Apply Theme Immediately to prevent Flash of Default Color
+        try {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                const { color, bg } = JSON.parse(savedTheme);
+                document.documentElement.style.setProperty('--color-primary', color);
+                document.documentElement.style.setProperty('--color-bg', bg);
+                // Also update secondary/glass if needed or derivative logic
+                // Simple derivative for glass border
+                document.documentElement.style.setProperty('--glass-border', color + '33');
+            }
+        } catch (e) {
+            console.error('Theme load error:', e);
+        }
+    </script>
+    <style>
+        :root {
+            --color-primary: #00ffff;
+            --color-secondary: #0044ff;
+            --color-bg: #050505;
+            --font-display: 'Orbitron', sans-serif;
+            --font-body: 'Rajdhani', sans-serif;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            margin: 0;
+            overflow: hidden;
+            font-family: var(--font-body);
+            color: #fff;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- GATE MECHANISM --- */
+        #gate-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: backdrop-filter 1s ease, pointer-events 0.5s step-end;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        #gate-overlay.unlocked {
+            pointer-events: none;
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+        }
+
+        .gate-door {
+            position: absolute;
+            top: 0;
+            width: 50.5%;
+            height: 100%;
+            background: #030303;
+            z-index: 1;
+            transition: transform 1.2s cubic-bezier(0.8, 0, 0.2, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Tech Grid Background */
+        .gate-door::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.3;
+        }
+
+        .gate-left {
+            left: 0;
+            transform-origin: left;
+        }
+
+        .gate-right {
+            right: 0;
+            transform-origin: right;
+        }
+
+        /* Holographic Giant Text */
+        .door-content {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .gate-left .door-content {
+            right: 10%;
+            text-align: right;
+        }
+
+        .gate-right .door-content {
+            left: 10%;
+            text-align: left;
+        }
+
+        .big-text {
+            font-family: var(--font-display);
+            font-size: 15rem;
+            line-height: 0.8;
+            font-weight: 900;
+            color: transparent;
+            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.05);
+            text-transform: uppercase;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        /* Unlock Animation States */
+        #gate-overlay.unlocked .gate-left {
+            transform: translateX(-102%);
+        }
+
+        #gate-overlay.unlocked .gate-right {
+            transform: translateX(102%);
+        }
+
+        #gate-overlay.unlocked .lock-interface {
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
+        }
+
+        /* --- LOCK INTERFACE (CENTER) --- */
+        .lock-interface {
+            position: absolute;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2.5rem;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Rotating Rings */
+        .lock-ring-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+        }
+
+        .ring-outer {
+            width: 100%;
+            height: 100%;
+            border-top: 2px solid var(--color-primary);
+            border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+            animation: spin 8s linear infinite;
+        }
+
+        .ring-inner {
+            width: 70%;
+            height: 70%;
+            border-left: 2px solid var(--color-secondary);
+            border-right: 2px solid var(--color-secondary);
+            animation: spin 4s linear infinite reverse;
+        }
+
+        .lock-core {
+            width: 140px;
+            height: 140px;
+            background: #000;
+            border: 2px solid var(--color-primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        }
+
+        /* Cover the cut line */
+        .lock-core::before {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            background: #050505;
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .lock-icon {
+            color: var(--color-primary);
+            filter: drop-shadow(0 0 8px var(--color-primary));
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status-text {
+            font-family: var(--font-display);
+            color: var(--color-primary);
+            letter-spacing: 6px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px var(--color-primary);
+            margin-top: -1rem;
+        }
+
+        /* SLIDER COMPONENT */
+        .slider-container {
+            width: 320px;
+            height: 64px;
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            padding: 4px;
+        }
+
+        /* Animated background for slider track */
+        .slider-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(90deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0, 255, 255, 0.05) 10px,
+                    rgba(0, 255, 255, 0.05) 11px);
+        }
+
+        .slider-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            user-select: none;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .slider-handle {
+            width: 56px;
+            height: 56px;
+            background: var(--color-primary);
+            border-radius: 2px;
+            position: relative;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+            z-index: 2;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        .slider-handle:active {
+            cursor: grabbing;
+            background: #fff;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+        }
+
+        .slider-handle::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border-right: 2px solid #000;
+            border-top: 2px solid #000;
+            transform: rotate(45deg);
+            margin-left: -4px;
+        }
+
+        /* --- CONTENT PAGE --- */
+        #detail-content {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 6rem 2rem;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 1s ease-out;
+            transition-delay: 0.5s;
+        }
+
+        #detail-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.content-active {
+            overflow: auto;
+        }
+
+        .detail-section {
+            margin-bottom: 6rem;
+            background: rgba(5, 5, 5, 0.85);
+            border: 1px solid rgba(0, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .detail-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--color-secondary);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .detail-section h2 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            color: #fff;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .detail-section p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #ccc;
+            margin-bottom: 1.5rem;
+        }
+
+        .code-snippet {
+            background: #000;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: monospace;
+            color: var(--color-primary);
+            overflow-x: auto;
+            margin: 2rem 0;
+            white-space: pre;
+        }
+
+        .back-nav {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 1s 1.5s;
+        }
+
+        .visible .back-nav {
+            opacity: 1;
+        }
+
+        .back-btn {
+            color: #fff;
+            text-decoration: none;
+            font-family: var(--font-display);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--color-primary);
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: var(--color-primary);
+            color: #000;
+            box-shadow: 0 0 15px var(--color-primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Gate Overlay -->
+    <div id="gate-overlay">
+        <!-- Left Door -->
+        <div class="gate-door gate-left">
+            <div class="door-content">
+                <div class="big-text">SEC</div>
+            </div>
+        </div>
+
+        <!-- Right Door -->
+        <div class="gate-door gate-right">
+            <div class="door-content">
+                <div class="big-text">URE</div>
+            </div>
+        </div>
+
+        <!-- Center Lock Mechanism -->
+        <div class="lock-interface">
+            <div class="lock-ring-container">
+                <div class="ring ring-outer"></div>
+                <div class="ring ring-inner"></div>
+                <div class="lock-core">
+                    <svg class="lock-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="status-text" id="lock-status">SECURITY ACTIVE</div>
+
+            <!-- Drag Slider -->
+            <div class="slider-container" id="slider-track">
+                <div class="slider-bg"></div>
+                <div class="slider-text">SLIDE TO DECRYPT</div>
+                <div class="slider-handle" id="slider-handle"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (Hidden Initially) -->
+    <div class="back-nav" id="back-nav">
+        <a href="/docs.html" class="back-btn">&larr; Return to Docs</a>
+    </div>
+
+    <main id="detail-content">
+
+        <section class="detail-section" id="particle-dynamics">
+            <h2>Particle Dynamics</h2>
+            <p>The core particle system utilizes a custom GPU-based simulation engine. Rather than updating particle
+                positions on the CPU, we leverage WebGL Transform Feedback or texture-based position updates to handle
+                over 100,000 localized particles at 60fps.</p>
+            <p>Our algorithm implements a simplified flocking behavior combined with a noise field to create the organic
+                "floating" sensation. Velocity vectors are computed based on a 4D Simplex noise derived from the spatial
+                coordinates and time.</p>
+
+        </section>
+
+        <section class="detail-section" id="bloom-shader">
+            <h2>Bloom Shader Pipeline</h2>
+            <p>The post-processing stack is built on top of the EffectComposer. The UnrealBloomPass is heavily modified
+                to support selective blooming, where only materials exceeding a specific brightness threshold trigger
+                the glow effect.</p>
+            <p>We use a multi-pass approach:</p>
+            <ul>
+                <li>Pass 1: Render the main scene to a buffer.</li>
+                <li>Pass 2: Filter bright areas using a luminosity threshold (0.85).</li>
+                <li>Pass 3: Apply Gaussian blur horizontally and vertically.</li>
+                <li>Pass 4: Combine the blurred texture with the original scene.</li>
+            </ul>
+        </section>
+
+        <section class="detail-section" id="quantum-state">
+            <h2>Quantum State Logic</h2>
+            <p>In the context of the Neural Core interface, "Quantum State" refers to the probabilistic determination of
+                UI elements. Values effectively exist in a superposition of "loading" and "ready" until the user
+                observes (interacts) with them.</p>
+            <p>This is simulated using requestIdleCallback to perform heavy calculations only when the main thread is
+                free, ensuring the interface remains responsive even during heavy data crunching.</p>
+        </section>
+
+        <section class="detail-section" id="render-loop">
+            <h2>Optimized Render Loop</h2>
+            <p>Standard requestAnimationFrame loops can be wasteful if the scene is static. Our Neural Loop implements a
+                "dirty" flag system. Frames are only rendered when:</p>
+            <ul>
+                <li>Input is detected (Mouse, Touch, Scroll)</li>
+                <li>Animation clips are active</li>
+                <li>Physics simulations haven't reached equilibrium</li>
+            </ul>
+            <p>This approach reduces GPU load by 40% on idle tabs, preserving user battery life.</p>
+        </section>
+
+        <section class="detail-section" id="event-system">
+            <h2>Event System & Raycasting</h2>
+            <p>Interaction with 3D elements is managed through a custom Raycaster implementation. We normalize mouse
+                coordinates from screen space (-1 to +1) and project a ray from the camera's perspective.</p>
+            <p>To optimize performance, raycasting checks are throttled to 30ms intervals and only performed against a
+                simplified "hit-box" mesh layer rather than high-poly render meshes.</p>
+        </section>
+
+        <section class="detail-section" id="entropy-decay">
+            <h2>Entropy Decay Algorithms</h2>
+            <p>Visualizing data rot is achieved by selectively displacing vertices over time. A vertex shader attribute
+                `a_decay` stores the degradation level of each mesh face.</p>
+            <p>As the "entropy" value increases, a pseudo-random function displaces vertices along their normals,
+                creating a jagged, corrupted aesthetic that mimics digital signal loss.</p>
+        </section>
+
+        <section class="detail-section" id="threading-model">
+            <h2>Threading Model</h2>
+            <p>To keep the main UI thread unblocked (ensuring smooth scrolling and 60fps animations), heavy geometry
+                generation is offloaded to Web Workers.</p>
+            <p>Procedural terrain generation and particle flocking calculations happen in background threads, posting
+                buffers back to the main thread only when ready for upload to the GPU.</p>
+        </section>
+
+        <section class="detail-section" id="memory-heap">
+            <h2>Memory Heap Management</h2>
+            <p>WebGL applications are prone to memory leaks if geometries and materials are not disposed of correctly.
+                The Neural Core implements a reference-counting Garbage Collector.</p>
+            <p>When a scene module is unloaded, the GC iterates through the scene graph, calling `.dispose()` on all
+                geometries, textures, and materials, ensuring the memory heap remains stable over long sessions.</p>
+        </section>
+
+    </main>
+
+    <!-- Scripts -->
+    <script type="module" src="/src/details-main.js"></script>
+    <script>
+        // GATE LOGIC
+        const sliderTrack = document.getElementById('slider-track');
+        const sliderHandle = document.getElementById('slider-handle');
+        const gateOverlay = document.getElementById('gate-overlay');
+        const lockStatus = document.getElementById('lock-status');
+        const content = document.getElementById('detail-content');
+        const backNav = document.getElementById('back-nav');
+
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+        const maxSlide = 260; // 320 (container) - 56 (handle) - 4 (gap) = 260
+
+        // Mouse Events
+        sliderHandle.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            sliderHandle.style.transition = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const delta = e.clientX - startX;
+            currentX = Math.max(0, Math.min(delta, maxSlide));
+
+            sliderHandle.style.transform = `translateX(${currentX}px)`;
+
+            // Visual Feedback: Opacity change on track bg or text fade?
+            const progress = currentX / maxSlide;
+            document.querySelector('.slider-text').style.opacity = 1 - progress;
+
+            if (currentX >= maxSlide - 5) {
+                unlockGate();
+                isDragging = false;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            isDragging = false;
+
+            if (currentX < maxSlide - 5) {
+                sliderHandle.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                sliderHandle.style.transform = 'translateX(0)';
+                currentX = 0;
+                document.querySelector('.slider-text').style.opacity = 1;
+            }
+        });
+
+        // Touch Events
+        sliderHandle.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            startX = e.touches[0].clientX;
+            sliderHandle.style.transition = 'none';
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+
+            const delta = e.touches[0].clientX - startX;
+            currentX = Math.max(0, Math.min(delta, maxSlide));
+
+            sliderHandle.style.transform = `translateX(${currentX}px)`;
+
+            // Visual Feedback
+            const progress = currentX / maxSlide;
+            document.querySelector('.slider-text').style.opacity = 1 - progress;
+
+            if (currentX >= maxSlide - 5) {
+                unlockGate();
+                isDragging = false;
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            if (currentX < maxSlide - 5) {
+                sliderHandle.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                sliderHandle.style.transform = 'translateX(0)';
+                currentX = 0;
+                document.querySelector('.slider-text').style.opacity = 1;
+            }
+        });
+
+        function unlockGate() {
+            lockStatus.innerText = "ACCESS GRANTED";
+            lockStatus.style.color = "#fff";
+            document.querySelector('.lock-icon').style.color = "#fff";
+
+            // Trigger animation
+            setTimeout(() => {
+                gateOverlay.classList.add('unlocked');
+                content.classList.add('visible');
+                backNav.style.opacity = '1';
+                document.body.classList.add('content-active');
+            }, 200);
+        }
+
+    </script>
+</body>
+
+</html>

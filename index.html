@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURAL CORE | Advanced Interface</title>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script>
+    // CRITICAL: Apply Theme Immediately to prevent Flash of Default Color
+    try {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        const { color, bg } = JSON.parse(savedTheme);
+        document.documentElement.style.setProperty('--color-primary', color);
+        document.documentElement.style.setProperty('--color-bg', bg);
+        document.documentElement.style.setProperty('--glass-border', color + '33');
+      }
+    } catch (e) { console.error(e); }
+  </script>
+  <style>
+    :root {
+      --color-primary: #00ffff;
+      --color-secondary: #0044ff;
+      --color-bg: #050505;
+      --font-display: 'Orbitron', sans-serif;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body.loaded {
+      overflow: auto;
+    }
+
+    #loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.8s ease-out;
+      pointer-events: none;
+    }
+
+    .spinner {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+
+    .spinner-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 4px solid transparent;
+      border-top-color: var(--color-primary);
+      animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    }
+
+    .spinner-ring:nth-child(2) {
+      width: 70%;
+      height: 70%;
+      top: 15%;
+      left: 15%;
+      border-top-color: var(--color-secondary);
+      animation-duration: 2s;
+      animation-direction: reverse;
+    }
+
+    .spinner-ring:nth-child(3) {
+      width: 40%;
+      height: 40%;
+      top: 30%;
+      left: 30%;
+      border-top-color: #fff;
+      border-width: 2px;
+      animation-duration: 1s;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loader-text {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--color-primary);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      letter-spacing: 4px;
+      animation: pulse 1s infinite alternate;
+      white-space: nowrap;
+    }
+
+    @keyframes pulse {
+      from {
+        opacity: 0.5;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .loaded #loader-overlay {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div id="loader-overlay">
+    <div class="spinner">
+      <div class="spinner-ring"></div>
+      <div class="spinner-ring"></div>
+      <div class="spinner-ring"></div>
+      <div class="loader-text">INITIALIZING</div>
+    </div>
+  </div>
+  <!-- 3D Background Container -->
+  <div id="canvas-container"></div>
+
+
+  <!-- UI Overlay -->
+  <main id="app">
+    <nav class="glass-panel">
+      <div class="nav-background"></div>
+      <div class="logo">NEURAL<span class="highlight">CORE</span></div>
+      <div class="nav-links">
+        <button class="mobile-menu-btn" aria-label="Toggle Navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="nav-items">
+          <a href="/" class="active">Interface</a>
+          <a href="/docs.html">Docs</a>
+          <a href="#modules">Modules</a>
+          <a href="#pricing">Pricing</a>
+        </div>
+        <!-- Connect Dropdown -->
+        <div class="connect-dropdown-wrapper" style="position: relative;">
+          <button class="cta-small btn-connect-trigger" style="display: flex; align-items: center; gap: 8px;">
+            Connect
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor">
+              <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </button>
+
+          <div class="wallet-dropdown glass-panel">
+            <div class="wallet-option">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask"
+                class="wallet-icon-img">
+              <span>METAMASK</span>
+            </div>
+            <div class="wallet-option">
+              <img
+                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cGF0aCBmaWxsPSIjQUI5RkYyIiBkPSJNMTA3LjQgMzMuNmMtNS43LTkuNC0xNC41LTE2LjUtMjQuOS0xOS45LTMuNy0xLjItNy44LTEuOS0xMi0xLjlINTcuNWMtMjAuMyAwLTM4LjMgMTIuMy00NS41IDMwLjdDOS4zIDUwLjggNy45IDU5LjQgNy45IDY4LjJjMCAyMy45IDEzLjkgNDQuNyAzNC40IDU0LjQgMy43IDEuNyA3LjcgMi42IDExLjkgMi42aDExLjJjMjguMyAwIDUxLjItMjIuOSAxLjItNTEuMiAwLTE0LjgtNi4zLTI4LjEtMTYuNS0zNy42LTEtMS0xLjktMS45LTIuNy0yLjh6Ii8+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTTM4LjMgOTAuNGMtNC4xIDAtNy40LTMuMy03LjQtNy40IDAtNC4xIDMuMy03LjQgNy40LTcuNCA0LjEgMCA3LjQgMy4zIDcuNCA3LjQgMCA0LjEtMy4zIDcuNC03LjQgNy40em0zMiAwYy00LjEgMC03LjQtMy4zLTcuNC03LjQgMC00LjEgMy4zLTcuNCA3LjQtNy40IDQuMSAwIDcuNCAzLjMgNy40IDcuNCAwIDQuMS0zLjQgNy40LTcuNCA3LjR6Ii8+PC9zdmc+"
+                alt="Phantom" class="wallet-icon-img">
+              <span>PHANTOM</span>
+            </div>
+            <div class="wallet-option">
+              <img
+                src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg"
+                alt="WalletConnect" class="wallet-icon-img">
+              <span>WALLETCONNECT</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-content glass-panel large">
+        <div class="status-marker">
+          <span class="blink"></span> SYSTEM ONLINE
+        </div>
+        <h1>NEURAL <br> <span class="gradient-text">INTERFACE</span></h1>
+        <p class="subtitle">
+          Next-generation 3D visualization core utilizing WebGL particle systems and post-processing bloom effects.
+        </p>
+
+        <div class="hero-actions">
+          <button class="btn-primary" id="btn-initialize">
+            <span class="btn-content">INITIALIZE</span>
+            <div class="btn-glow"></div>
+          </button>
+          <a href="/docs.html" class="btn-secondary"
+            style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">VIEW
+            DOCS</a>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat">
+            <span class="value">98%</span>
+            <span class="label">CORE STABILITY</span>
+          </div>
+          <div class="stat">
+            <span class="value">3.2TB</span>
+            <span class="label">DATA FLOW</span>
+          </div>
+          <div class="stat">
+            <span class="value">0ms</span>
+            <span class="label">LATENCY</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Partners / Trusted By -->
+    <!-- Partners / Trusted By -->
+    <div class="partners-strip glass-panel">
+      <span class="partner-label">TRUSTED BY SYSTEMS:</span>
+      <div class="marquee-wrapper">
+        <div class="partner-list">
+          <!-- Set 1 -->
+          <div>CYBERDYNE</div>
+          <div>MASSIVE DYNAMIC</div>
+          <div>TYRELL CORP</div>
+          <div>WEYLAND-YUTANI</div>
+          <div>SOYLENT</div>
+          <!-- Set 2 (Seamless Loop) -->
+          <div>CYBERDYNE</div>
+          <div>MASSIVE DYNAMIC</div>
+          <div>TYRELL CORP</div>
+          <div>WEYLAND-YUTANI</div>
+          <div>SOYLENT</div>
+          <!-- Set 3 (Extra buffer for large screens) -->
+          <div>CYBERDYNE</div>
+          <div>MASSIVE DYNAMIC</div>
+          <div>TYRELL CORP</div>
+          <div>WEYLAND-YUTANI</div>
+          <div>SOYLENT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <section class="section full-height" id="modules">
+      <div class="container">
+        <h2 class="section-title">SYSTEM <span class="highlight">MODULES</span></h2>
+        <div class="grid-3">
+          <div class="glass-panel card">
+            <div class="card-icon">01</div>
+            <h3>QUANTUM PROCESSING</h3>
+            <p>Distributed computing nodes ensuring zero-latency data throughput across the network.</p>
+          </div>
+          <div class="glass-panel card">
+            <div class="card-icon">02</div>
+            <h3>NEURAL SYNC</h3>
+            <p>Bi-directional data synchronization with adaptative AI prediction algorithms.</p>
+          </div>
+          <div class="glass-panel card">
+            <div class="card-icon">03</div>
+            <h3>DEEP ENCRYPTION</h3>
+            <p>Military-grade encryption protocols protecting core infrastructure data.</p>
+          </div>
+          <div class="glass-panel card">
+            <div class="card-icon">04</div>
+            <h3>AUTO-SCALING</h3>
+            <p>Dynamic resource allocation that grows instantly with your traffic spikes.</p>
+          </div>
+          <div class="glass-panel card">
+            <div class="card-icon">05</div>
+            <h3>API GATEWAY</h3>
+            <p>Unified entry point for all microservices with built-in throttling and auth.</p>
+          </div>
+          <div class="glass-panel card">
+            <div class="card-icon">06</div>
+            <h3>EDGE CAVING</h3>
+            <p>Global CDN integration to serve active neural weights from the edge.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Architecture / Info Section -->
+    <section class="section" id="architecture">
+      <div class="glass-panel wide-panel">
+        <div class="split-layout">
+          <div class="text-content">
+            <h2>CORE <span class="highlight">ARCHITECTURE</span></h2>
+            <p>Our infrastructure is built on a decentralized mesh of neural nodes. Each node acts as an independent
+              processor while maintaining constant synchronization with the central core.</p>
+            <ul class="feature-list">
+              <li><span>></span> 99.99% Uptime Guarantee</li>
+              <li><span>></span> Auto-Scaling Infrastructure</li>
+              <li><span>></span> Real-time Threat Detection</li>
+            </ul>
+          </div>
+          <div class="visual-placeholder">
+            <div class="code-block">
+              <code>
+> INIT_SEQUENCE_START
+> CONNECTING_NODES... [OK]
+> SUCCESS: BRIDGE ESTABLISHED
+> OPTIMIZING_ROUTE...
+> BANDWIDTH: 100%
+> _
+                </code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="section" id="pricing">
+      <div class="container">
+        <h2 class="section-title">ACCESS <span class="highlight">TIERS</span></h2>
+        <div class="grid-3 pricing-grid">
+          <!-- Basic -->
+          <div class="glass-panel card pricing-card">
+            <h3>NODE</h3>
+            <div class="price">500 <span class="currency">CREDITS</span></div>
+            <p class="period">/ month</p>
+            <ul class="feature-list small">
+              <li>1 Neural Core</li>
+              <li>10TB Bandwidth</li>
+              <li>Basic Encryption</li>
+            </ul>
+            <button class="btn-secondary full-width">SELECT</button>
+          </div>
+          <!-- Pro -->
+          <div class="glass-panel card pricing-card featured">
+            <div class="featured-tag">RECOMMENDED</div>
+            <h3>CLUSTER</h3>
+            <div class="price">2000 <span class="currency">CREDITS</span></div>
+            <p class="period">/ month</p>
+            <ul class="feature-list small">
+              <li>10 Neural Cores</li>
+              <li>Unlimited Bandwidth</li>
+              <li>Quantum Encryption</li>
+              <li>Priority Routing</li>
+            </ul>
+            <button class="btn-primary full-width">SELECT</button>
+          </div>
+          <!-- Enterprise -->
+          <div class="glass-panel card pricing-card">
+            <h3>MESH</h3>
+            <div class="price">CUSTOM</div>
+            <p class="period">/ month</p>
+            <ul class="feature-list small">
+              <li>Dedicated Infrastructure</li>
+              <li>Custom Models</li>
+              <li>24/7 Neural Link</li>
+            </ul>
+            <button class="btn-secondary full-width">CONTACT</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="section centered-section">
+      <div class="glass-panel cta-box">
+        <h2>READY TO <span class="highlight">CONNECT?</span></h2>
+        <p>Initialize your instance today and join the neural network.</p>
+        <br>
+        <button class="btn-primary">
+          <span class="btn-content">START FREE TRIAL</span>
+          <div class="btn-glow"></div>
+        </button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-content glass-panel">
+        <div class="footer-col">
+          <div class="logo">NEURAL<span class="highlight">CORE</span></div>
+          <p>© 2049 Neural Core Systems.<br>All systems nominal.</p>
+        </div>
+        <div class="footer-col">
+          <h4>PLATFORM</h4>
+          <a href="#">Architecture</a>
+          <a href="#">Pricing</a>
+          <a href="#">Status</a>
+        </div>
+        <div class="footer-col">
+          <h4>LEGAL</h4>
+          <a href="#">Privacy Protocol</a>
+          <a href="#">Terms of Interface</a>
+        </div>
+        <div class="footer-col">
+          <h4>CONNECT</h4>
+          <a href="#">Twitter</a>
+          <a href="#">GitHub</a>
+          <a href="#">Discord</a>
+        </div>
+      </div>
+    </footer>
+
+    <div class="corner-decor top-left"></div>
+    <div class="corner-decor bottom-right"></div>
+    <!-- Theme Switcher -->
+    <div class="theme-switcher">
+      <div class="theme-toggle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10h-10V2z"></path>
+        </svg>
+      </div>
+      <div class="theme-options">
+        <button class="theme-btn" data-color="#00ffff" data-bg="#050505" style="--btn-color: #00ffff"
+          title="Cyber Cyan"></button>
+        <button class="theme-btn" data-color="#ff0055" data-bg="#150005" style="--btn-color: #ff0055"
+          title="Neon Red"></button>
+        <button class="theme-btn" data-color="#bc13fe" data-bg="#0a0015" style="--btn-color: #bc13fe"
+          title="Electric Purple"></button>
+        <button class="theme-btn" data-color="#00ff00" data-bg="#000f00" style="--btn-color: #00ff00"
+          title="Matrix Green"></button>
+        <button class="theme-btn" data-color="#ffaa00" data-bg="#150800" style="--btn-color: #ffaa00"
+          title="Safety Orange"></button>
+
+        <button class="theme-btn" data-color="#2962ff" data-bg="#000515" style="--btn-color: #2962ff"
+          title="Deep Blue"></button>
+        <button class="theme-btn" data-color="#ccff00" data-bg="#0a1500" style="--btn-color: #ccff00"
+          title="Toxic Lime"></button>
+        <button class="theme-btn" data-color="#ff00cc" data-bg="#150010" style="--btn-color: #ff00cc"
+          title="Hot Pink"></button>
+        <button class="theme-btn" data-color="#ffee00" data-bg="#151000" style="--btn-color: #ffee00"
+          title="Cyber Yellow"></button>
+        <button class="theme-btn" data-color="#ffffff" data-bg="#111111" style="--btn-color: #ffffff"
+          title="Ghost White"></button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Wallet Connect Modal (For Initialize Button) -->
+  <div id="wallet-modal" class="modal-overlay">
+    <div class="modal-content glass-panel">
+      <div class="modal-header">
+        <h2>CONNECT <span class="highlight">WALLET</span></h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <p class="modal-subtitle">Select your neural interface provider</p>
+
+      <div class="wallet-grid">
+        <button class="wallet-option modal-option">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask"
+            class="wallet-icon-img">
+          <span>METAMASK</span>
+          <div class="hover-glow"></div>
+        </button>
+
+        <button class="wallet-option modal-option">
+          <img
+            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cGF0aCBmaWxsPSIjQUI5RkYyIiBkPSJNMTA3LjQgMzMuNmMtNS43LTkuNC0xNC41LTE2LjUtMjQuOS0xOS45LTMuNy0xLjItNy44LTEuOS0xMi0xLjlINTcuNWMtMjAuMyAwLTM4LjMgMTIuMy00NS41IDMwLjdDOS4zIDUwLjggNy45IDU5LjQgNy45IDY4LjJjMCAyMy45IDEzLjkgNDQuNyAzNC40IDU0LjQgMy43IDEuNyA3LjcgMi42IDExLjkgMi42aDExLjJjMjguMyAwIDUxLjItMjIuOSA1MS4yLTUxLjIgMC0xNC44LTYuMy0yOC4xLTE2LjUtMzcuNi0xLTEtMS45LTEuOS0yLjctMi44eiIvPjxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik0zOC4zIDkwLjRjLTQuMSAwLTcuNC0zLjMtNy40LTcuNCAwLTQuMSAzLjMtNy40IDcuNC03LjQgNC4xIDAgNy40IDMuMyA3LjQgNy40IDAgNC4xLTMuMyA3LjQtNy40IDcuNHptMzIgMGMtNC4xIDAtNy40LTMuMy03LjQtNy40IDAtNC4xIDMuMy03LjQgNy40LTcuNCA0LjEgMCA3LjQgMy4zIDcuNCA3LjQgMCA0LjEtMy40IDcuNC03LjQgNy40eiIvPjwvc3ZnPg=="
+            alt="Phantom" class="wallet-icon-img">
+          <span>PHANTOM</span>
+          <div class="hover-glow"></div>
+        </button>
+
+        <button class="wallet-option modal-option">
+          <img
+            src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg"
+            alt="WalletConnect" class="wallet-icon-img">
+          <span>WALLETCONNECT</span>
+          <div class="hover-glow"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+  <!-- Failsafe Loader Removal -->
+  <script>
+    setTimeout(() => {
+      if (!document.body.classList.contains('loaded')) {
+        console.warn('Failsafe triggered: forcing loader removal');
+        document.body.classList.add('loaded');
+      }
+    }, 4000);
+  </script>
+</body>
+
+</html>
